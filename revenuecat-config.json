@@ -1,0 +1,127 @@
+{
+  "products": {
+    "consumables": [
+      {
+        "id": "grace_pass_pack_5",
+        "name": "Grace Pass Pack (5)",
+        "description": "Restore broken streaks with God's grace - 5 passes",
+        "price": "$0.99",
+        "entitlement": "grace_passes"
+      },
+      {
+        "id": "premium_boosters",
+        "name": "Premium Booster Pack",
+        "description": "Extra XP boosters for faster spiritual growth",
+        "price": "$2.99",
+        "entitlement": "extra_boosters"
+      },
+      {
+        "id": "support_mission_small",
+        "name": "Support the Mission - Small",
+        "description": "Help us spread God's word to more believers",
+        "price": "$1.99",
+        "entitlement": null
+      },
+      {
+        "id": "support_mission_medium",
+        "name": "Support the Mission - Medium",
+        "description": "Help us spread God's word to more believers",
+        "price": "$4.99",
+        "entitlement": null
+      },
+      {
+        "id": "support_mission_large",
+        "name": "Support the Mission - Large",
+        "description": "Help us spread God's word to more believers",
+        "price": "$9.99",
+        "entitlement": null
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "premium_monthly",
+        "name": "Premium Monthly",
+        "description": "Unlimited grace passes, extra boosters, ad-free experience",
+        "price": "$3.99/month",
+        "entitlement": "premium",
+        "trial_period": "7 days"
+      },
+      {
+        "id": "premium_yearly",
+        "name": "Premium Yearly",
+        "description": "Unlimited grace passes, extra boosters, ad-free experience - Save 17%",
+        "price": "$39.99/year",
+        "entitlement": "premium",
+        "trial_period": "7 days"
+      }
+    ]
+  },
+  "entitlements": [
+    {
+      "id": "premium",
+      "name": "Premium Access",
+      "description": "Full access to all premium features",
+      "products": ["premium_monthly", "premium_yearly"]
+    },
+    {
+      "id": "grace_passes",
+      "name": "Grace Passes",
+      "description": "Ability to restore broken streaks",
+      "products": ["grace_pass_pack_5"]
+    },
+    {
+      "id": "extra_boosters",
+      "name": "Extra Boosters",
+      "description": "Additional XP boosters for faster progression",
+      "products": ["premium_boosters"]
+    }
+  ],
+  "offerings": [
+    {
+      "id": "default",
+      "name": "Default Offering",
+      "packages": [
+        {
+          "id": "premium_monthly_package",
+          "product": "premium_monthly",
+          "type": "monthly"
+        },
+        {
+          "id": "premium_yearly_package",
+          "product": "premium_yearly",
+          "type": "annual"
+        },
+        {
+          "id": "grace_pass_package",
+          "product": "grace_pass_pack_5",
+          "type": "consumable"
+        },
+        {
+          "id": "booster_package",
+          "product": "premium_boosters",
+          "type": "consumable"
+        }
+      ]
+    }
+  ],
+  "setup_instructions": {
+    "ios": {
+      "steps": [
+        "Create products in App Store Connect",
+        "Configure entitlements in RevenueCat dashboard",
+        "Set up offerings and packages",
+        "Test with sandbox accounts",
+        "Submit for review"
+      ]
+    },
+    "android": {
+      "steps": [
+        "Create products in Google Play Console",
+        "Configure entitlements in RevenueCat dashboard",
+        "Set up offerings and packages",
+        "Test with license testing accounts",
+        "Publish to internal testing"
+      ]
+    }
+  }
+}

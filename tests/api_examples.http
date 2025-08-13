@@ -1,0 +1,243 @@
+# SCRIPTURELOOP API EXAMPLES
+# Complete collection of API calls for testing ScriptureLoop backend
+# 
+# HOW TO USE:
+# 1. Install REST Client extension in VS Code, or import into Postman
+# 2. Update the variables section with your actual Supabase credentials
+# 3. Run each request individually to test different features
+# 4. Check responses to ensure functions work correctly
+#
+# WHAT THIS TESTS:
+# - All RPC functions (award_xp, gift_booster, etc.)
+# - Idempotency (calling same function twice)
+# - Leaderboard ordering
+# - Offline action processing
+# - RevenueCat webhook simulation
+# - Edge Function triggers
+
+### CONFIGURATION VARIABLES
+# Replace these with your actual Supabase project values
+# Get these from your Supabase dashboard > Settings > API
+@supabaseUrl = https://your-project.supabase.co
+@anonKey = your_anon_key_here
+@serviceKey = your_service_role_key_here
+
+### 1. AWARD XP (IDEMPOTENT)
+# Tests the core XP awarding system
+# Should succeed and return XP amount with bonuses applied
+POST {{supabaseUrl}}/rest/v1/rpc/award_xp
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_amount": 75,
+  "p_source": "Daily Challenge",
+  "p_action_id": "challenge_2024_001_unique",
+  "p_meta": {
+    "score": 8,
+    "total_questions": 10,
+    "difficulty": "medium"
+  }
+}
+
+### 2. AWARD XP AGAIN (IDEMPOTENCY TEST)
+# Same action_id as above - should return "Already processed"
+# Validates that duplicate XP awards are prevented
+POST {{supabaseUrl}}/rest/v1/rpc/award_xp
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_amount": 75,
+  "p_source": "Daily Challenge",
+  "p_action_id": "challenge_2024_001_unique",
+  "p_meta": {
+    "score": 8,
+    "total_questions": 10,
+    "difficulty": "medium"
+  }
+}
+
+### 3. GIFT BOOSTER TO FRIEND
+# Tests social feature where users can gift XP boosters
+# Replace recipient-user-uuid-here with actual user ID
+POST {{supabaseUrl}}/rest/v1/rpc/gift_booster
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_to_user_id": "recipient-user-uuid-here",
+  "p_booster_type": "2x",
+  "p_action_id": "gift_2024_001_unique"
+}
+
+### 4. REDEEM GRACE PASS
+# Tests grace pass system for streak recovery
+# Should consume one grace pass and restore broken streak
+POST {{supabaseUrl}}/rest/v1/rpc/redeem_grace_pass
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_action_id": "grace_pass_2024_001_unique"
+}
+
+### 5. GET LEADERBOARD (ALL LEAGUES, WEEKLY)
+# Tests leaderboard with correct ordering
+# Should return users ordered by: league DESC, weekly_xp DESC
+POST {{supabaseUrl}}/rest/v1/rpc/get_leaderboard
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_league": null,
+  "p_timeframe": "weekly"
+}
+
+### 6. GET LEADERBOARD (SILVER LEAGUE FILTER)
+# Tests league-specific leaderboard filtering
+# Should only return users in Silver league (league = 2)
+POST {{supabaseUrl}}/rest/v1/rpc/get_leaderboard
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_league": 2,
+  "p_timeframe": "weekly"
+}
+
+### 7. PROCESS OFFLINE ACTIONS
+# Tests offline action reconciliation system
+# Processes any queued actions for the specified user
+POST {{supabaseUrl}}/rest/v1/rpc/process_offline_actions
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_user_id": "your-user-uuid-here"
+}
+
+### 8. SUBMIT OFFLINE ACTION
+# Tests queuing system for offline progress
+# Action will be processed when processOfflineActions is called
+POST {{supabaseUrl}}/rest/v1/rest/v1/offline_actions
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "action_id": "offline_challenge_2024_001",
+  "action_type": "award_xp",
+  "payload": {
+    "amount": 50,
+    "source": "Offline Challenge",
+    "meta": {
+      "completed_offline": true,
+      "sync_timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+
+### 9. MANUAL WEEKLY LEAGUE UPDATE (ADMIN ONLY)
+# Triggers weekly league promotion/relegation manually
+# Requires service role key - DO NOT use anon key
+POST {{supabaseUrl}}/functions/v1/weekly-league-update
+Authorization: Bearer {{serviceKey}}
+Content-Type: application/json
+
+{}
+
+### 10. SIMULATE REVENUECAT WEBHOOK (ADMIN ONLY)
+# Tests purchase processing system
+# Simulates a purchase webhook from RevenueCat
+POST {{supabaseUrl}}/functions/v1/revenuecat-webhook
+Authorization: Bearer webhook_secret_here
+Content-Type: application/json
+
+{
+  "event": {
+    "type": "INITIAL_PURCHASE",
+    "app_user_id": "user-uuid-here",
+    "product_id": "grace_pass_single",
+    "price": 0.99,
+    "currency": "USD",
+    "purchased_at": "2024-01-15T10:30:00Z",
+    "transaction_id": "test_transaction_123"
+  }
+}
+
+### 11. GET USER PROFILE
+# Tests user data retrieval with RLS
+# Should only return current user's profile
+GET {{supabaseUrl}}/rest/v1/users?select=*&id=eq.your-user-uuid
+Authorization: Bearer {{anonKey}}
+
+### 12. GET XP TRANSACTION HISTORY
+# Tests XP ledger access with RLS
+# Shows all XP transactions for current user
+GET {{supabaseUrl}}/rest/v1/xp_ledger?select=*&user_id=eq.your-user-uuid&order=created_at.desc
+Authorization: Bearer {{anonKey}}
+
+### 13. GET SOCIAL ACTIVITY FEED
+# Tests social feed with RLS filtering
+# Shows activities from followed users only
+GET {{supabaseUrl}}/rest/v1/activities?select=*,users!inner(name,avatar)&order=created_at.desc&limit=20
+Authorization: Bearer {{anonKey}}
+
+### 14. FOLLOW ANOTHER USER
+# Tests social connection system
+# Creates follow relationship for activity feed
+POST {{supabaseUrl}}/rest/v1/followers
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "following_id": "user-to-follow-uuid"
+}
+
+### 15. GET ACTIVE XP BOOSTERS
+# Tests booster system
+# Shows current user's active (non-expired) boosters
+GET {{supabaseUrl}}/rest/v1/boosters?select=*&is_active=eq.true&expires_at=gte.now()
+Authorization: Bearer {{anonKey}}
+
+### 16. GET PURCHASE HISTORY
+# Tests purchase audit trail
+# Shows current user's RevenueCat purchase history
+GET {{supabaseUrl}}/rest/v1/purchases?select=*&order=created_at.desc
+Authorization: Bearer {{anonKey}}
+
+### 17. STRESS TEST IDEMPOTENCY
+# Run this request multiple times quickly
+# Tests concurrent request handling and race conditions
+# Run this multiple times quickly to test concurrent handling
+POST {{supabaseUrl}}/rest/v1/rpc/award_xp
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_amount": 25,
+  "p_source": "Concurrent Test",
+  "p_action_id": "concurrent_test_fixed_id",
+  "p_meta": {"test": "concurrency"}
+}
+
+### 18. VIEW LEAGUE SNAPSHOT (ADMIN ONLY)
+# Tests historical league data
+# Shows results from most recent weekly league update
+GET {{supabaseUrl}}/rest/v1/league_snapshots?select=*&order=created_at.desc&limit=1
+Authorization: Bearer {{serviceKey}}
+
+### 19. TEST MORNING BONUS SYSTEM
+# Tests time-based XP bonuses
+# Only works between 6-9 AM UTC, gives 1.5x XP multiplier
+# Call between 6-9 AM UTC to test morning bonus
+POST {{supabaseUrl}}/rest/v1/rpc/award_xp
+Authorization: Bearer {{anonKey}}
+Content-Type: application/json
+
+{
+  "p_amount": 100,
+  "p_source": "Morning Challenge",
+  "p_action_id": "morning_bonus_test_001",
+  "p_meta": {"morning_bonus_eligible": true}
+}
